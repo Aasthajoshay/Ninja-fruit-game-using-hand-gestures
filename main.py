@@ -10,6 +10,10 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
 
+total_hits = 0
+total_misses = 0
+
+
 # Correct Hands initialization with named parameters
 hands = mp_hands.Hands(
     static_image_mode=False,
@@ -51,11 +55,12 @@ def Spawn_Fruits():
     Fruits.append(fruit)
 
 def Fruit_Movement(Fruits, speed):
-    global Lives
+    global Lives,total_misses
     for fruit in list(Fruits):
         if fruit["Curr_position"][1] < 20 or fruit["Curr_position"][0] > 650:
             Lives -= 1
             Fruits.remove(fruit)
+            total_misses += 1
         else:
             cv2.circle(img, tuple(fruit["Curr_position"]), Fruit_Size, fruit["Color"], -1)
             fruit["Next_position"][0] = fruit["Curr_position"][0] + speed[0]
@@ -109,6 +114,7 @@ while cap.isOpened():
                             Score += 100
                             slash_Color = fruit["Color"]
                             Fruits.remove(fruit)
+                            total_hits += 1
 
     if Score % 1000 == 0 and Score != 0:
         Difficulty_level = int(Score / 1000) + 1
@@ -128,6 +134,14 @@ while cap.isOpened():
     cv2.putText(img, "Score: " + str(Score), (int(w * 0.35), 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 5)
     cv2.putText(img, "Level: " + str(Difficulty_level), (int(w * 0.01), 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 150), 5)
     cv2.putText(img, "Lives remaining : " + str(Lives), (200, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+
+    # Calculate accuracy safely
+    if (total_hits + total_misses) > 0:
+        Accuracy = (total_hits / (total_hits + total_misses)) * 100
+    else:
+        Accuracy = 100
+
+    cv2.putText(img, f"Accuracy: {Accuracy:.2f}%", (int(w * 0.01), 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
     if not game_Over:
         if time.time() > next_Time_to_Spawn:
